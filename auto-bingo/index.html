@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Auto Bingo — Streetview Roadtrip Bingo</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header class="topbar">
+  <h1>🚗 Auto Bingo</h1>
+  <nav class="topbar-actions">
+    <button id="navHomeBtn" class="link-btn" hidden>Mijn routes</button>
+    <button id="settingsBtn" class="link-btn">API-sleutel</button>
+  </nav>
+</header>
+
+<main id="app">
+
+  <!-- HOME SCREEN -->
+  <section id="screen-home" class="screen">
+    <div class="card intro">
+      <p>Maak een route, kies markante plekken langs de weg via Street View, en laat medespelers ze onderweg scoren op hun eigen bingokaart. Scoren kan alleen binnen <strong>1&nbsp;km</strong> van de plek, met een druk op de knop of een foto.</p>
+    </div>
+
+    <div class="section-header">
+      <h2>Mijn routes</h2>
+      <button id="newRouteBtn" class="primary-btn">+ Nieuwe route</button>
+    </div>
+    <div id="gamesList" class="games-list"></div>
+
+    <div class="card">
+      <h2>Route ontvangen via link?</h2>
+      <p>Plak hier een gedeelde bingo-link om mee te spelen:</p>
+      <div class="row">
+        <input id="importLinkInput" type="text" placeholder="https://.../#share=...">
+        <button id="importLinkBtn" class="secondary-btn">Importeren</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- API KEY SCREEN -->
+  <section id="screen-apikey" class="screen">
+    <div class="card">
+      <h2>Google Maps API-sleutel</h2>
+      <p>Voor het maken van routes (kaart, zoeken, Street View) heb je een eigen Google Maps API-sleutel nodig. Zet in de Google Cloud Console de <em>Maps JavaScript API</em>, <em>Places API</em>, <em>Geocoding API</em> en <em>Street View Static API</em> aan, en beperk de sleutel bij voorkeur tot jouw domein.</p>
+      <p>De sleutel wordt alleen lokaal in je browser opgeslagen (localStorage) en nergens naartoe gestuurd, behalve rechtstreeks naar Google.</p>
+      <div class="row">
+        <input id="apiKeyInput" type="text" placeholder="AIza...">
+        <button id="saveApiKeyBtn" class="primary-btn">Opslaan</button>
+      </div>
+      <p class="hint">Meespelen via een gedeelde link kan ook zonder sleutel (dan zie je geen foto-voorbeelden, alleen namen).</p>
+      <button id="backFromApiKeyBtn" class="link-btn">← Terug</button>
+    </div>
+  </section>
+
+  <!-- CREATE / EDIT ROUTE SCREEN -->
+  <section id="screen-create" class="screen">
+    <div class="card">
+      <div class="row">
+        <input id="gameNameInput" type="text" placeholder="Naam van de route, bv. 'Naar Zuid-Frankrijk'">
+      </div>
+      <div class="row">
+        <input id="originInput" type="text" placeholder="Vertrekpunt">
+        <input id="destinationInput" type="text" placeholder="Bestemming">
+      </div>
+      <div class="row">
+        <label for="gridSizeSelect">Kaartgrootte:</label>
+        <select id="gridSizeSelect">
+          <option value="3">3×3 (9 plekken)</option>
+          <option value="4">4×4 (16 plekken)</option>
+          <option value="5" selected>5×5 (25 plekken)</option>
+          <option value="6">6×6 (36 plekken)</option>
+        </select>
+        <button id="planRouteBtn" class="secondary-btn">Route plannen</button>
+      </div>
+      <div id="routeInfo" class="hint"></div>
+    </div>
+
+    <div class="card">
+      <div id="map"></div>
+      <p class="hint">Klik op de kaart of zoek een plek hieronder om een markant punt toe te voegen aan de bingokaart.</p>
+      <div class="row">
+        <input id="placeSearchInput" type="text" placeholder="Zoek een plek (bv. 'Eiffeltoren')">
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-header">
+        <h2>Bingo-elementen (<span id="elementCount">0</span>/<span id="elementNeeded">25</span>)</h2>
+      </div>
+      <div id="elementsList" class="elements-list"></div>
+    </div>
+
+    <div class="row create-actions">
+      <button id="cancelCreateBtn" class="link-btn">Annuleren</button>
+      <button id="saveGameBtn" class="primary-btn">Route opslaan</button>
+    </div>
+  </section>
+
+  <!-- STREET VIEW ADJUST MODAL -->
+  <div id="svModal" class="modal" hidden>
+    <div class="modal-content">
+      <h2>Markeer de plek</h2>
+      <div id="svPano"></div>
+      <div class="row">
+        <input id="svNameInput" type="text" placeholder="Naam van deze plek">
+      </div>
+      <div class="row">
+        <button id="svCancelBtn" class="link-btn">Annuleren</button>
+        <button id="svSaveBtn" class="primary-btn">Toevoegen aan bingokaart</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- GAME DETAIL / SHARE SCREEN -->
+  <section id="screen-detail" class="screen">
+    <div class="card">
+      <h2 id="detailGameName"></h2>
+      <div class="row">
+        <button id="playGameBtn" class="primary-btn">▶ Spelen</button>
+        <button id="editGameBtn" class="secondary-btn">Bewerken</button>
+        <button id="deleteGameBtn" class="danger-btn">Verwijderen</button>
+      </div>
+      <div class="row">
+        <button id="shareGameBtn" class="secondary-btn">🔗 Deel speel-link</button>
+      </div>
+      <div id="shareLinkBox" class="share-link-box" hidden>
+        <input id="shareLinkOutput" type="text" readonly>
+        <button id="copyShareLinkBtn" class="secondary-btn">Kopiëren</button>
+      </div>
+      <button id="backFromDetailBtn" class="link-btn">← Terug naar mijn routes</button>
+    </div>
+  </section>
+
+  <!-- PLAY SCREEN -->
+  <section id="screen-play" class="screen">
+    <div class="card play-header">
+      <h2 id="playGameName"></h2>
+      <div id="playProgress" class="progress-badge">0 / 0 gevonden</div>
+      <div id="geoStatus" class="geo-status">📍 Locatie ophalen...</div>
+      <button id="backFromPlayBtn" class="link-btn">← Terug</button>
+    </div>
+    <div id="bingoGrid" class="bingo-grid"></div>
+  </section>
+
+  <!-- ELEMENT DETAIL / SCORE MODAL -->
+  <div id="scoreModal" class="modal" hidden>
+    <div class="modal-content">
+      <h2 id="scoreModalName"></h2>
+      <img id="scoreModalImg" class="sv-thumb-large" alt="">
+      <div id="scoreModalDistance" class="distance-info"></div>
+      <div id="scoreModalActions" class="row">
+        <button id="scoreBtn" class="primary-btn">✅ Ik zie het! Meld</button>
+        <label class="secondary-btn photo-label">
+          📷 Maak foto
+          <input id="scorePhotoInput" type="file" accept="image/*" capture="environment" hidden>
+        </label>
+      </div>
+      <div id="scoreModalDone" class="scored-info" hidden></div>
+      <button id="scoreModalCloseBtn" class="link-btn">Sluiten</button>
+    </div>
+  </div>
+
+</main>
+
+<div id="toast" class="toast" hidden></div>
+
+<script src="app.js"></script>
+</body>
+</html>
